@@ -241,7 +241,7 @@ public class TextFiles {
 				if (terms.length==2){
 					result.put(terms[0], terms[1]);
 				} else {
-					log("CFG file ["+cfgFileName+"] line #"+i+" ignored.");
+					// log("CFG file ["+cfgFileName+"] line #"+i+" ignored.");
 				}
 			}
 			i++;
@@ -309,7 +309,7 @@ public class TextFiles {
 	public static String getStartLocation(){
 		String result;
 			result=System.getProperty("user.dir")+File.separator;//TextFiles.class.getProtectionDomain().getCodeSource().getLocation().getPath().toLowerCase().substring(1);
-                        log("start Location: "+result);
+                        //log("start Location: "+result);
 			
                         /*
                         File jarFile=new File(result);
