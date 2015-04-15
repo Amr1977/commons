@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  */
 public class Logging {
-	private static Path logFile=Paths.get("log.txt");
+	private static Path logFile=Paths.get(TextFiles.getStartLocation()+"log/log.txt");
 	public static ConcurrentLinkedQueue<String> diskLogQueue=new ConcurrentLinkedQueue<>();
 	public static ConcurrentLinkedQueue<String> webLogQueue=new ConcurrentLinkedQueue<>();
 	public static Boolean showLogMsg=true;
