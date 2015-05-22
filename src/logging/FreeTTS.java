@@ -34,8 +34,11 @@ public class FreeTTS implements Runnable{
 	public FreeTTS(){
 
 	}
-
 	public void run() {
+
+	}
+
+	public void run2() {
 		voice.allocate();
 		while(true){
 			while(! voiceLogQueue.isEmpty()){
