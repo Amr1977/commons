@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *
  */
 public class Logging {
+	//public static final String OS = System.getProperty("os.name").toLowerCase();
 	private static Path logFile=Paths.get(TextFiles.getStartLocation()+"log/log.txt");
 	public static ConcurrentLinkedQueue<String> diskLogQueue=new ConcurrentLinkedQueue<>();
 	public static ConcurrentLinkedQueue<String> webLogQueue=new ConcurrentLinkedQueue<>();
@@ -147,7 +148,36 @@ public class Logging {
 			 e.printStackTrace();
 		 }
 	}
-public static  void main(String[] args){
+        public static String getOSName(){
+            System.getProperties().list(System.out);
+            return System.getProperty("os.name");
+        }
+
+        public static boolean isMac() {
+        	
+    		return ( System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0);
+    	
+    	}
+
+    	public static boolean isSolaris() {
+    	
+    		return ( System.getProperty("os.name").toLowerCase().indexOf("sunos") >= 0);
+    	
+    	}
+
+    	public static boolean isUnix() {
+    	
+    		return ( System.getProperty("os.name").toLowerCase().indexOf("nix") >= 0 
+    				||  System.getProperty("os.name").toLowerCase().indexOf("nux") >= 0 
+    				||	System.getProperty("os.name").toLowerCase().indexOf("aix") > 0);
+    	
+    	}
+
+    	public static boolean isWindows() {
+    		return ( System.getProperty("os.name").toLowerCase().indexOf("win") >= 0);
+    	}
+        
+        public static  void main(String[] args){
 	System.out.println(getTimeStamp());
 	
 }

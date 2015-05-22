@@ -346,7 +346,7 @@ public class TextFiles {
 		return result;
 	}
 	
-	public static String JAR_BUILD=getBuildDate();
+	public static String JAR_BUILD="";//getBuildDate();
 	
 	public static String getBuildDate(){
 		String result="";
@@ -361,7 +361,7 @@ public class TextFiles {
 	
 	
 	public static void main(String[] args) throws IOException{
-		System.out.println(compare("d:/downloads/Exported-701.xml","C:/SiLKTestDemo/data/exports/FTS/export.xml"));
+		log(getStartLocation());
 	}
 	
 

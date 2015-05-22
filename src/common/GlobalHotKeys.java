@@ -3,9 +3,12 @@ package common;
 import java.io.IOException;
 import java.util.TreeMap;
 
+import logging.Logging;
+
 import com.melloware.jintellitype.HotkeyListener;
 import com.melloware.jintellitype.JIntellitype;
 import com.sun.speech.freetts.FreeTTS;
+
 import static logging.Logging.*;
 
 public class GlobalHotKeys implements HotkeyListener{
@@ -100,50 +103,54 @@ public class GlobalHotKeys implements HotkeyListener{
  * 
  */
 	public  GlobalHotKeys(int...keys){
-		for(int i:keys){
-			JIntellitype.getInstance().registerHotKey(i, JIntellitype.MOD_CONTROL+JIntellitype.MOD_ALT, i);
-		}
-		JIntellitype.getInstance().addHotKeyListener(this);
-		//add shutdown hook
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			@Override
-			public void run(){
-				try {
-					log("ShutdownHook: cleanup...",1);
-					JIntellitype.getInstance().cleanUp();
-				} catch (Exception e) {
-					log(e);
-				}
+		if (Logging.isWindows()){
+			for(int i:keys){
+				JIntellitype.getInstance().registerHotKey(i, JIntellitype.MOD_CONTROL+JIntellitype.MOD_ALT, i);
 			}
-		});
+			JIntellitype.getInstance().addHotKeyListener(this);
+			//add shutdown hook
+			Runtime.getRuntime().addShutdownHook(new Thread(){
+				@Override
+				public void run(){
+					try {
+						log("ShutdownHook: cleanup...",1);
+						JIntellitype.getInstance().cleanUp();
+					} catch (Exception e) {
+						log(e);
+					}
+				}
+			});
+		}
 		
 	}
 	
 	public static IKeyHandler keyHandler=null;
 	
 	public  GlobalHotKeys(IKeyHandler ikh){
-		if (ikh==null){
-			log("No key handler installed.");
-			return;
-		}
-		keyHandler=ikh;
-		for(int i:ikh.keysToRegister()){
-			JIntellitype.getInstance().registerHotKey(i, JIntellitype.MOD_CONTROL+JIntellitype.MOD_ALT, i);
-			log("installed keyhook for: Ctrl+Alt+"+i);
-		}
-		JIntellitype.getInstance().addHotKeyListener(this);
-		//add shutdown hook
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			@Override
-			public void run(){
-				try {
-					log("ShutdownHook: cleanup...",1);
-					JIntellitype.getInstance().cleanUp();
-				} catch (Exception e) {
-					log(e);
-				}
+		if (Logging.isWindows()){
+			if (ikh==null){
+				log("No key handler installed.");
+				return;
 			}
-		});
+			keyHandler=ikh;
+			for(int i:ikh.keysToRegister()){
+				JIntellitype.getInstance().registerHotKey(i, JIntellitype.MOD_CONTROL+JIntellitype.MOD_ALT, i);
+				log("installed keyhook for: Ctrl+Alt+"+i);
+			}
+			JIntellitype.getInstance().addHotKeyListener(this);
+			//add shutdown hook
+			Runtime.getRuntime().addShutdownHook(new Thread(){
+				@Override
+				public void run(){
+					try {
+						log("ShutdownHook: cleanup...",1);
+						JIntellitype.getInstance().cleanUp();
+					} catch (Exception e) {
+						log(e);
+					}
+				}
+			});
+		}
 	}
 	@Override
 	public void onHotKey(int arg0){
