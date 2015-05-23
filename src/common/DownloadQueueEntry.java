@@ -16,6 +16,10 @@ public class DownloadQueueEntry {
     private String url;
     //url 
 
+    DownloadQueueEntry(String url, String fileName){
+        setFileName(fileName);
+        setUrl(url);
+    }
     /**
      * @return the fileName
      */
