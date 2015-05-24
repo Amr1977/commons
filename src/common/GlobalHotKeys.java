@@ -104,7 +104,9 @@ public class GlobalHotKeys implements HotkeyListener{
  */
 	public  GlobalHotKeys(int...keys){
 		if (Logging.isWindows()){
-			for(int i:keys){
+                    Logging.log("Register global hotkeys ....");
+                    try{
+                        for(int i:keys){
 				JIntellitype.getInstance().registerHotKey(i, JIntellitype.MOD_CONTROL+JIntellitype.MOD_ALT, i);
 			}
 			JIntellitype.getInstance().addHotKeyListener(this);
@@ -120,6 +122,12 @@ public class GlobalHotKeys implements HotkeyListener{
 					}
 				}
 			});
+                        Logging.log("Register global hotkeys [OK]");
+                    }catch(Exception e){
+                        Logging.log("Register global hotkeys [XX]");
+                        Logging.log(e);
+                    }
+			
 		}
 		
 	}
@@ -132,7 +140,8 @@ public class GlobalHotKeys implements HotkeyListener{
 				log("No key handler installed.");
 				return;
 			}
-			keyHandler=ikh;
+                        try{
+                            keyHandler=ikh;
 			for(int i:ikh.keysToRegister()){
 				JIntellitype.getInstance().registerHotKey(i, JIntellitype.MOD_CONTROL+JIntellitype.MOD_ALT, i);
 				log("installed keyhook for: Ctrl+Alt+"+i);
@@ -150,6 +159,11 @@ public class GlobalHotKeys implements HotkeyListener{
 					}
 				}
 			});
+                        }catch(Exception e){
+                            Logging.log("Failed to add global hotkey listener !!!");
+                            Logging.log(e);
+                        }
+			
 		}
 	}
 	@Override
@@ -157,6 +171,7 @@ public class GlobalHotKeys implements HotkeyListener{
 		if (keyHandler==null){
 			return;
 		}
+                Logging.log("Global hotkey: "+arg0);
 		keyHandler.actOnKey(arg0);
 	}
 //	{
