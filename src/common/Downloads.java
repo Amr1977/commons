@@ -47,9 +47,15 @@ public class Downloads implements Runnable{
      * @param fileName 
      */
     public static void add(String url, String fileName){
-        DownloadQueueEntry downloadQueueEntry=new DownloadQueueEntry(url,fileName);
-        getDownloadQueue().add(downloadQueueEntry);
-        Logging.log("Download Queue: added["+url+","+fileName+"]");
+        //TODO maybe we need another force add that overwrites the file if exists
+        if (!(new File(fileName).exists())){
+            DownloadQueueEntry downloadQueueEntry=new DownloadQueueEntry(url,fileName);
+            getDownloadQueue().add(downloadQueueEntry);
+            Logging.log("Download Queue: added["+url+","+fileName+"]");
+        } else{
+            Logging.log("Download Queue: dropped ["+fileName+"] already exists.");
+        }
+        
     }
 
     /**
