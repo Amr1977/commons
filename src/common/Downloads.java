@@ -49,6 +49,7 @@ public class Downloads implements Runnable{
     public static void add(String url, String fileName){
         DownloadQueueEntry downloadQueueEntry=new DownloadQueueEntry(url,fileName);
         getDownloadQueue().add(downloadQueueEntry);
+        Logging.log("Download Queue: added["+url+","+fileName+"]");
     }
 
     /**
