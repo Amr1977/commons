@@ -6,11 +6,16 @@
 package common;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import logging.Logging;
+import logging.TextFiles;
 import org.apache.commons.io.FileUtils;
 
 /**
@@ -20,10 +25,49 @@ import org.apache.commons.io.FileUtils;
 public class Downloads implements Runnable{
     static private Thread downloaderThread;
     static private ArrayList<DownloadQueueEntry> downloadQueue;
+    static private TreeMap<String,String> downloadTreeMap=new TreeMap(String.CASE_INSENSITIVE_ORDER);
+    static private File toDelete;
     static{
         setDownloadQueue(new ArrayList<>());
+        //setDownloadTreeMap(new TreeMap(String.CASE_INSENSITIVE_ORDER));
         setDownloaderThread(null);
         Logging.log("Downloads Class initialized.");
+        //create a folder to hold file names of files being downloaded, 
+        //each one of these files contains the full path of a file that is being downloaded now 
+        // so next time when the application loads it wipes all incomplete downlads
+        toDelete=new File("todelete");
+        if (toDelete.mkdirs()){
+            Logging.log("created transaction folder.");
+        }
+        if (toDelete.isDirectory()) {
+            for (String fileName : toDelete.list()) {
+                try {
+                    String fullFileName = toDelete.getAbsolutePath() + File.separator + fileName;
+                    Logging.log("Incomplete download file found in : " + fullFileName);
+                    String fileToDelete = TextFiles.loadString(fullFileName);
+                    if (!fileToDelete.isEmpty()){
+                        //get rid of line feed
+                        fileToDelete=fileToDelete.substring(0, fileToDelete.length()-1);
+                    }
+                    Logging.log("Deleting incomplete download file found in : " + fileToDelete);
+                    try {
+                        if (new File(fileToDelete).delete()) {
+                            Logging.log("Deleted: " + fileToDelete);
+                        }
+                        if (new File(fullFileName).delete()) {
+                            Logging.log("Deleted: " + fullFileName);
+                        }
+                    } catch (Exception ex) {
+                        Logger.getLogger(Downloads.class.getName()).log(Level.SEVERE, null, ex);
+                        Logging.log(ex);
+                    }
+                } catch (Exception e) {
+                    Logging.log(e);
+                }
+
+            }
+        }
+        
     }
 
     /**
@@ -38,6 +82,10 @@ public class Downloads implements Runnable{
      */
     public static void setDownloadQueue(ArrayList<DownloadQueueEntry> aDownloadQueue) {
         downloadQueue = aDownloadQueue;
+        getDownloadTreeMap().clear();
+        for(DownloadQueueEntry entry: downloadQueue){
+            getDownloadTreeMap().put(entry.getFileName(), entry.getUrl());
+        }
     }
     
     /**
@@ -48,9 +96,14 @@ public class Downloads implements Runnable{
      */
     public static void add(String url, String fileName){
         //TODO maybe we need another force add that overwrites the file if exists
+        if (isInQueue(fileName)){
+            Logging.log("Download Queue: Skipped ["+fileName+"] already in Queue.");
+            return;
+        }
         if (!(new File(fileName).exists())){
             DownloadQueueEntry downloadQueueEntry=new DownloadQueueEntry(url,fileName);
             getDownloadQueue().add(downloadQueueEntry);
+            getDownloadTreeMap().put(fileName, url);
             Logging.log("Download Queue: added["+url+","+fileName+"]");
         } else{
             Logging.log("Download Queue: dropped ["+fileName+"] already exists.");
@@ -59,33 +112,43 @@ public class Downloads implements Runnable{
     }
 
     /**
-	 * Tries to download a file from the url (if file not already existing) and save it to filePath. 
-	 * @param url to download 
-	 * @param filePath full destination file name to save.
-	 * @throws Exception 
-	 */
-	public static void downloadFile(String url, String filePath) throws Exception{
-		File myFile=new File(filePath);
-		if (!myFile.exists()){
-			try{
-                            //TODO: write that file name to a transaction log, to be deleted on next start   
-				Logging.log("Download start: "+url);
-				FileUtils.copyURLToFile(new URL(url),myFile );
-				Logging.log("Download ended: "+url);
-                                //TODO: clear the transaction log
-			} catch(Exception e){
-                            //clean partial files
-                            if (myFile.exists()){
-                                myFile.delete();
-                            }
-			Logging.log("Error downloading/copying file: "+url);
-                        throw e;
-			}
+     * Tries to download a file from the url (if file not already existing) and
+     * save it to filePath.
+     *
+     * @param url to download
+     * @param filePath full destination file name to save.
+     * @throws Exception
+     */
+    public static void downloadFile(String url, String filePath) throws Exception {
+        File myFile = new File(filePath);
+        if (!myFile.exists()) {
+            try {
+                //TODO: write that file name to a transaction log, to be deleted on next start   
+                Logging.log("Download start: " + url);
 
-		}else{
-                    Logging.log("downloadFile: File already exists ["+filePath+"].");
+                //create a temp file with contents that equals the name of the file being downladed
+                File tempFile = File.createTempFile("Del-", ".txt", toDelete);
+                TextFiles.save(tempFile.getAbsolutePath(), filePath);
+                
+
+                FileUtils.copyURLToFile(new URL(url), myFile);
+                //if reached here without any exception then we can safely delete the temp file
+                tempFile.delete();
+                Logging.log("Download ended: " + url);
+                //TODO: clear the transaction log
+            } catch (Exception e) {
+                //clean partial files
+                if (myFile.exists()) {
+                    myFile.delete();
                 }
-	}
+                Logging.log("Error downloading/copying file: " + url);
+                throw e;
+            }
+
+        } else {
+            Logging.log("downloadFile: File already exists [" + filePath + "].");
+        }
+    }
         
         public static void start(){
             if (getDownloaderThread()== null){
@@ -112,6 +175,13 @@ public class Downloads implements Runnable{
     }
     
     public static boolean isInQueue(String fileName){
+        
+        if (getDownloadTreeMap().get(fileName)==null){
+            return false;
+        } else{
+            return true;
+        }
+        /*
         boolean result=false;
         for(int i=0;i<getDownloadQueue().size();i++){
             if(getDownloadQueue().get(i).getFileName().toLowerCase().equals(fileName.toLowerCase())){
@@ -120,6 +190,25 @@ public class Downloads implements Runnable{
             }
         }
         return result;
+        
+        */
+    }
+
+    /**
+     * @return the downloadTreeMap
+     */
+    public static TreeMap<String,String> getDownloadTreeMap() {
+        if (downloadTreeMap==null){
+            downloadTreeMap=new TreeMap(String.CASE_INSENSITIVE_ORDER);
+        }
+        return downloadTreeMap;
+    }
+
+    /**
+     * @param aDownloadTreeMap the downloadTreeMap to set
+     */
+    public static void setDownloadTreeMap(TreeMap<String,String> aDownloadTreeMap) {
+        downloadTreeMap = aDownloadTreeMap;
     }
     
     @Override
@@ -137,6 +226,7 @@ public class Downloads implements Runnable{
                     Logging.log("Download Queue size: "+getDownloadQueue().size());
                     downloadFile(downloadQueueEntry.getUrl(),downloadQueueEntry.getFileName());
                     getDownloadQueue().remove(0);
+                    getDownloadTreeMap().remove(downloadQueueEntry.getFileName());
                 } catch (Exception ex) {
                     Logger.getLogger(Downloads.class.getName()).log(Level.SEVERE, null, ex);
                     Logging.log(ex);
