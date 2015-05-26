@@ -24,7 +24,7 @@ import org.apache.commons.io.FileUtils;
  */
 public class Downloads implements Runnable{
     static private Thread downloaderThread;
-    static private ArrayList<DownloadQueueEntry> downloadQueue;
+    static private ArrayList<String> downloadQueue;
     static private TreeMap<String,String> downloadTreeMap=new TreeMap(String.CASE_INSENSITIVE_ORDER);
     static private File toDelete;
     static{
@@ -73,19 +73,15 @@ public class Downloads implements Runnable{
     /**
      * @return the downloadQueue
      */
-    public static ArrayList<DownloadQueueEntry> getDownloadQueue() {
+    public static ArrayList<String> getDownloadQueue() {
         return downloadQueue;
     }
 
     /**
      * @param aDownloadQueue the downloadQueue to set
      */
-    public static void setDownloadQueue(ArrayList<DownloadQueueEntry> aDownloadQueue) {
+    public static void setDownloadQueue(ArrayList<String> aDownloadQueue) {
         downloadQueue = aDownloadQueue;
-        getDownloadTreeMap().clear();
-        for(DownloadQueueEntry entry: downloadQueue){
-            getDownloadTreeMap().put(entry.getFileName(), entry.getUrl());
-        }
     }
     
     /**
@@ -94,19 +90,25 @@ public class Downloads implements Runnable{
      * @param url
      * @param fileName 
      */
-    public static void add(String url, String fileName){
+    public static void add(String url, String fileName,boolean inQueueHead){
         //TODO maybe we need another force add that overwrites the file if exists
         if (isInQueue(fileName)){
-            Logging.log("Download Queue: Skipped ["+fileName+"] already in Queue.");
+            Logging.log("Download Queue["+getDownloadQueue().size()+"]: Skipped ["+fileName+"] already in Queue.");
             return;
         }
         if (!(new File(fileName).exists())){
-            DownloadQueueEntry downloadQueueEntry=new DownloadQueueEntry(url,fileName);
-            getDownloadQueue().add(downloadQueueEntry);
+            if (inQueueHead){
+                //insertion in the head
+                getDownloadQueue().add(0,fileName);
+            }else{
+                //insertion at the end
+                getDownloadQueue().add(fileName);
+            }
+            
             getDownloadTreeMap().put(fileName, url);
-            Logging.log("Download Queue: added["+url+","+fileName+"]");
+            Logging.log("Download Queue["+getDownloadQueue().size()+"]: added["+url+","+fileName+"]");
         } else{
-            Logging.log("Download Queue: dropped ["+fileName+"] already exists.");
+            Logging.log("Download Queue["+getDownloadQueue().size()+"]: dropped ["+fileName+"] already exists.");
         }
         
     }
@@ -216,17 +218,16 @@ public class Downloads implements Runnable{
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         while(true){
             while(getDownloadQueue().size()>0){
-                DownloadQueueEntry downloadQueueEntry;
-                downloadQueueEntry = new DownloadQueueEntry(
-                        getDownloadQueue().get(0).getUrl(),
-                        getDownloadQueue().get(0).getFileName()
-                );
+                
                   
                 try {
                     Logging.log("Download Queue size: "+getDownloadQueue().size());
-                    downloadFile(downloadQueueEntry.getUrl(),downloadQueueEntry.getFileName());
-                    getDownloadQueue().remove(0);
-                    getDownloadTreeMap().remove(downloadQueueEntry.getFileName());
+                    String fileName=getDownloadQueue().get(0);
+                    downloadFile(getDownloadTreeMap().get(fileName),fileName);
+                    
+                    //TODO find a way to delete that entry and not first entry
+                    getDownloadQueue().remove(fileName);
+                    getDownloadTreeMap().remove(fileName);
                 } catch (Exception ex) {
                     Logger.getLogger(Downloads.class.getName()).log(Level.SEVERE, null, ex);
                     Logging.log(ex);
