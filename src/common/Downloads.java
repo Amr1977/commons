@@ -27,7 +27,9 @@ public class Downloads implements Runnable{
     static private ArrayList<String> downloadQueue;
     static private TreeMap<String,String> downloadTreeMap=new TreeMap(String.CASE_INSENSITIVE_ORDER);
     static private File toDelete;
+    static private boolean pause;
     static{
+        downloadsPause(false);
         setDownloadQueue(new ArrayList<>());
         //setDownloadTreeMap(new TreeMap(String.CASE_INSENSITIVE_ORDER));
         setDownloaderThread(null);
@@ -93,7 +95,13 @@ public class Downloads implements Runnable{
     public static void add(String url, String fileName,boolean inQueueHead){
         //TODO maybe we need another force add that overwrites the file if exists
         if (isInQueue(fileName)){
-            Logging.log("Download Queue["+getDownloadQueue().size()+"]: Skipped ["+fileName+"] already in Queue.");
+            if (inQueueHead){
+                getDownloadQueue().remove(fileName);
+                getDownloadQueue().add(0,fileName);
+                Logging.log("Moved entry to Queue head: "+fileName);
+            }else{
+                Logging.log("Download Queue["+getDownloadQueue().size()+"]: Skipped ["+fileName+"] already in Queue.");
+            }
             return;
         }
         if (!(new File(fileName).exists())){
@@ -212,12 +220,31 @@ public class Downloads implements Runnable{
     public static void setDownloadTreeMap(TreeMap<String,String> aDownloadTreeMap) {
         downloadTreeMap = aDownloadTreeMap;
     }
+
+    /**
+     * @return the pause
+     */
+    public static boolean isDownloadsPaused() {
+        return pause;
+    }
+
+    /**
+     * @param aPause the pause to set
+     */
+    public static void downloadsPause(boolean aPause) {
+        pause = aPause;
+        if (pause){
+            Logging.log("Downlaods Paused.");
+        }else{
+            Logging.log("Downlaods continue.");
+        }
+    }
     
     @Override
     public void run() {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         while(true){
-            while(getDownloadQueue().size()>0){
+            while((getDownloadQueue().size()>0)&&(!isDownloadsPaused())){
                 
                   
                 try {
