@@ -28,7 +28,9 @@ public class Downloads implements Runnable{
     static private TreeMap<String,String> downloadTreeMap=new TreeMap(String.CASE_INSENSITIVE_ORDER);
     static private File toDelete;
     static private boolean pause;
+    static private boolean connected;
     static{
+        setConnected(true);
         downloadsPause(false);
         setDownloadQueue(new ArrayList<>());
         //setDownloadTreeMap(new TreeMap(String.CASE_INSENSITIVE_ORDER));
@@ -129,7 +131,8 @@ public class Downloads implements Runnable{
      * @param filePath full destination file name to save.
      * @throws Exception
      */
-    public static void downloadFile(String url, String filePath) throws Exception {
+    public static boolean downloadFile(String url, String filePath) throws Exception {
+        boolean result=true;
         File myFile = new File(filePath);
         if (!myFile.exists()) {
             try {
@@ -139,14 +142,15 @@ public class Downloads implements Runnable{
                 //create a temp file with contents that equals the name of the file being downladed
                 File tempFile = File.createTempFile("Del-", ".txt", toDelete);
                 TextFiles.save(tempFile.getAbsolutePath(), filePath);
-                
-
                 FileUtils.copyURLToFile(new URL(url), myFile);
+                setConnected(true);
                 //if reached here without any exception then we can safely delete the temp file
                 tempFile.delete();
                 Logging.log("Download ended: " + url);
                 //TODO: clear the transaction log
             } catch (Exception e) {
+                setConnected(false);
+                result=false;
                 //clean partial files
                 if (myFile.exists()) {
                     myFile.delete();
@@ -154,10 +158,11 @@ public class Downloads implements Runnable{
                 Logging.log("Error downloading/copying file: " + url);
                 throw e;
             }
-
         } else {
             Logging.log("downloadFile: File already exists [" + filePath + "].");
         }
+        
+        return result;
     }
         
         public static void start(){
@@ -238,6 +243,20 @@ public class Downloads implements Runnable{
         }else{
             Logging.log("Downlaods continue.");
         }
+    }
+
+    /**
+     * @return the connected
+     */
+    public static boolean isConnected() {
+        return connected;
+    }
+
+    /**
+     * @param aConnected the connected to set
+     */
+    public static void setConnected(boolean aConnected) {
+        connected = aConnected;
     }
     
     @Override
